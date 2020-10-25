@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import useComponentSize from "@rehooks/component-size";
+import "bulma/css/bulma.min.css";
+import React, { useRef } from "react";
 import { Circle, Layer, Line, Stage } from "react-konva";
 import { animated, interpolate, useSpring, useSprings } from "react-spring";
-import regression from "regression";
 import "./App.css";
+import { usePoints } from "./hooks";
 
 const AnimatedCircle = animated(Circle);
 const AnimatedLine = animated(Line);
@@ -11,90 +13,63 @@ const Colors = {
     POINT: "#e13f3f",
     LINE: "#3b60ff",
     GRID: "#c5c5c5",
-    RESID: "#222222",
+    RESID: "#757575",
 };
 
-const getStats = (points) => {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-
-    if (points.length === 0) return [w / 2, h / 2, 0, h / 2];
-
-    const result = regression.linear(points);
-    const b1 = result.equation[0];
-    const b0 = result.equation[1];
-
-    const [sx, sy] = points.reduce(([sx, sy], [x, y]) => [sx + x, sy + y], [
-        0,
-        0,
-    ]);
-    const [mx, my] = [sx / points.length, sy / points.length];
-
-    return [mx, my, b1, b0];
-};
-
-const usePoints = () => {
-    const [points, _setPoints] = useState([]);
-    const [stats, setStats] = useState(getStats(points));
-
-    const setPoints = (newPoints) => {
-        _setPoints(newPoints);
-        setStats(getStats(newPoints));
-    };
-
-    const addPoint = (e) => {
-        if (e.target !== e.target.getStage()) {
-            return;
-        }
-        setPoints([...points, [e.evt.layerX, e.evt.layerY]]);
-    };
-
-    const removePoint = (idx) => {
-        const newPoints = [...points];
-        newPoints.splice(idx, 1);
-        setPoints(newPoints);
-    };
-
-    return [points, addPoint, removePoint, setPoints, stats];
-};
-
-const App = () => {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-
-    const [
-        points,
-        addPoint,
-        removePoint,
-        setPoints,
-        [mx, my, b1, b0],
-    ] = usePoints();
+const Canvas = ({
+    points,
+    addPoint,
+    removePoint,
+    allowAdd,
+    stats,
+    ...props
+}) => {
+    let ref = useRef(null);
+    let { width: w, height: h } = useComponentSize(ref);
 
     const springs = useSprings(
         points.length,
         points.map((p) => ({ x: p[0], y: p[1] }))
     );
 
-    const reg = useSpring({ mx, my, b1, b0 });
+    const { mx, my, b1, b0 } = useSpring({
+        mx: stats[0],
+        my: stats[1],
+        b1: stats[2],
+        b0: stats[3],
+    });
 
     return (
-        <div>
+        <div className="points-container" ref={ref}>
             <Stage
-                width={window.innerWidth}
-                height={window.innerHeight}
-                onClick={addPoint}
+                width={w}
+                height={h}
+                onClick={allowAdd ? addPoint : undefined}
+                {...props}
             >
                 <Layer>
                     <AnimatedLine
-                        points={reg.mx.interpolate((mx) => [mx, 0, mx, h])}
+                        points={interpolate([mx], (mx) => [mx, 0, mx, h])}
                         stroke={Colors.GRID}
                     />
                     <AnimatedLine
-                        points={reg.my.interpolate((my) => [0, my, w, my])}
+                        points={interpolate([my], (my) => [0, my, w, my])}
                         stroke={Colors.GRID}
                     />
+
+                    {springs.map(({ x, y }, idx) => (
+                        <AnimatedLine
+                            points={interpolate(
+                                [x, y, b1, b0],
+                                (x, y, b1, b0) => [x, y, x, b1 * x + b0]
+                            )}
+                            stroke={Colors.RESID}
+                            key={idx}
+                        />
+                    ))}
+
                     <AnimatedLine
-                        points={interpolate([reg.b0, reg.b1], (b0, b1) => [
+                        points={interpolate([b0, b1], (b0, b1) => [
                             0,
                             b0,
                             w,
@@ -104,32 +79,62 @@ const App = () => {
                     />
 
                     {springs.map(({ x, y }, idx) => (
-                        <AnimatedLine
-                            points={interpolate(
-                                [x, y, reg.b1, reg.b0],
-                                (x, y, b1, b0) => [x, y, x, b1 * x + b0]
-                            )}
-                            stroke={Colors.RESID}
-                            strokeWidth={1}
-                            key={idx}
-                        />
-                    ))}
-
-                    {springs.map(({ x, y }, idx) => (
                         <AnimatedCircle
                             x={x}
                             y={y}
                             radius={8}
                             fill={Colors.POINT}
                             key={idx}
-                            onClick={removePoint.bind(null, idx)}
+                            onClick={() => removePoint(idx)}
                         />
                     ))}
                 </Layer>
             </Stage>
-            {/* <button onClick={() => setPoints(points.map((p) => [p[0], 0]))}>
-                test
-            </button> */}
+        </div>
+    );
+};
+
+const App = () => {
+    const {
+        points,
+        stats,
+        showResids,
+        addPoint,
+        removePoint,
+        setShowResids,
+    } = usePoints();
+
+    const style = useSpring({
+        backgroundColor: showResids ? "#eeeeee" : "#ffffff",
+        cursor: showResids ? "not-allowed" : "initial",
+    });
+
+    return (
+        <div className="all-wrapper">
+            <animated.div className="box points-wrapper">
+                <div class="tabs is-centered mb-0">
+                    <ul>
+                        <li className={showResids ? "" : "is-active"}>
+                            <a onClick={() => setShowResids(false)}>
+                                <span>Points</span>
+                            </a>
+                        </li>
+                        <li className={showResids ? "is-active" : ""}>
+                            <a onClick={() => setShowResids(true)}>
+                                <span>Residuals</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <Canvas
+                    points={points}
+                    addPoint={addPoint}
+                    removePoint={removePoint}
+                    allowAdd={!showResids}
+                    stats={stats}
+                    style={style}
+                />
+            </animated.div>
         </div>
     );
 };
