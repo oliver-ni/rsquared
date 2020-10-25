@@ -2,9 +2,7 @@
 
 import useComponentSize from "@rehooks/component-size";
 import "bulma/css/bulma.min.css";
-import "katex/dist/katex.min.css";
 import React, { useRef } from "react";
-import { InlineMath } from "react-katex";
 import { Circle, Layer, Line, Stage, Text } from "react-konva";
 import { animated, interpolate, useSpring, useSprings } from "react-spring";
 import "./App.css";
