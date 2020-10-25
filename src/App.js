@@ -49,6 +49,7 @@ const Canvas = ({
     const { mx, my, b1, b0, r2 } = stats;
 
     const addPoint = (e) => {
+        if (e.target.constructor.name === "Circle") return;
         _addPoint(e.evt.layerX - w / 2, e.evt.layerY - h / 2);
     };
 
@@ -76,6 +77,17 @@ const Canvas = ({
                     </Layer>
                 ) : (
                     <Layer offsetX={-w / 2} offsetY={-h / 2}>
+                        <AnimatedText
+                            {...textProps}
+                            x={-w / 2}
+                            y={-h / 2}
+                            width={w}
+                            height={h}
+                            align="right"
+                            verticalAlign="bottom"
+                            text={r2.interpolate((r2) => `R² = ${round(r2)}`)}
+                        />
+
                         <AnimatedLine
                             points={mx.interpolate((mx) => [
                                 mx,
@@ -126,15 +138,6 @@ const Canvas = ({
                                 onClick={() => removePoint(idx)}
                             />
                         ))}
-
-                        <AnimatedText
-                            {...textProps}
-                            width={w / 2}
-                            height={h / 2}
-                            align="right"
-                            verticalAlign="bottom"
-                            text={r2.interpolate((r2) => `R² = ${round(r2)}`)}
-                        />
                     </Layer>
                 )}
             </Stage>
@@ -143,7 +146,7 @@ const Canvas = ({
 };
 
 const Histogram = ({ w, h, points }) => {
-    const numBars = Math.floor(h / 50);
+    const numBars = Math.ceil(h / 50);
 
     const bars = points.reduce((acc, [, yr]) => {
         const y = yr + h / 2;
