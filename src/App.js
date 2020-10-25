@@ -40,12 +40,11 @@ const Canvas = ({
     });
 
     return (
-        <div className="points-container" ref={ref}>
+        <animated.div className="points-container" ref={ref} {...props}>
             <Stage
                 width={w}
                 height={h}
                 onClick={allowAdd ? addPoint : undefined}
-                {...props}
             >
                 <Layer>
                     <AnimatedLine
@@ -90,7 +89,7 @@ const Canvas = ({
                     ))}
                 </Layer>
             </Stage>
-        </div>
+        </animated.div>
     );
 };
 
@@ -111,7 +110,7 @@ const App = () => {
 
     return (
         <div className="all-wrapper">
-            <animated.div className="box points-wrapper">
+            <div className="box points-wrapper">
                 <div class="tabs is-centered mb-0">
                     <ul>
                         <li className={showResids ? "" : "is-active"}>
@@ -134,7 +133,7 @@ const App = () => {
                     stats={stats}
                     style={style}
                 />
-            </animated.div>
+            </div>
         </div>
     );
 };
