@@ -213,7 +213,7 @@ const App = () => {
 
     const style = useSpring({
         backgroundColor: showResids ? "#eeeeee" : "#ffffff",
-        cursor: showResids ? "not-allowed" : "initial",
+        cursor: showResids ? "not-allowed" : "crosshair",
     });
 
     const stats = useSpring(_stats);

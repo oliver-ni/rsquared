@@ -1,7 +1,7 @@
 import { useState } from "react";
 import regression from "regression";
 
-const initialStats = { mx: -1, my: -1, sx: 0, sy: 0, b0: 0, b1: 0, r2: 0 };
+const initialStats = { mx: 0, my: 0, sx: 0, sy: 0, b0: 0, b1: 0, r2: 0 };
 
 const mean = (data) => {
     const sum = data.reduce((acc, val) => acc + val, 0);
