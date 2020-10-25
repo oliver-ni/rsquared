@@ -28,7 +28,6 @@ const textProps = {
     padding: 16,
 };
 
-const negate = (x) => -x;
 const round = (x) => x.toFixed(2);
 
 const Canvas = ({
@@ -143,91 +142,60 @@ const Canvas = ({
     );
 };
 
-const Histogram = ({ points }) => {
-    let ref = useRef(null);
-    let { height: h } = useComponentSize(ref);
-
+const Histogram = ({ w, h, points }) => {
     const numBars = Math.floor(h / 50);
+
+    const bars = points.reduce((acc, [, yr]) => {
+        const y = yr + h / 2;
+        acc[Math.floor(y / 50)] += 1;
+        return acc;
+    }, Array(numBars).fill(0));
+
+    const barHeight = Math.min(40, ...bars.map((n) => w / (n + 2)));
 
     const springs = useSprings(
         numBars,
-        points
-            .reduce((acc, [, yr]) => {
-                const y = yr + h / 2;
-                acc[Math.floor(y / 50)] += 1;
-                return acc;
-            }, Array(numBars).fill(0))
-            .map((x) => ({
-                width: x,
-            }))
+        bars.map((x) => ({
+            width: x * barHeight,
+        }))
     );
 
     return (
-        <div className="histogram-container" ref={ref}>
-            {springs.map(({ width }, idx) => (
-                <animated.div
-                    key={idx}
-                    style={{ width: width.interpolate((w) => w * 40) }}
-                ></animated.div>
+        <div className="histogram-container">
+            {springs.map((style, idx) => (
+                <animated.div key={idx} style={style}></animated.div>
             ))}
         </div>
     );
 };
 
-const StatsTable = ({ stats: { mx, my, sx, sy, r2 } }) => (
-    <table class="table control-table">
-        <tbody>
-            <tr>
-                <th>X Mean</th>
-                <td>
-                    <InlineMath>\bar x</InlineMath>
-                </td>
-                <animated.td>{mx.interpolate(round)}</animated.td>
-            </tr>
-            <tr>
-                <th>Y Mean</th>
-                <td>
-                    <InlineMath>\bar y</InlineMath>
-                </td>
-                <animated.td>
-                    {my.interpolate(negate).interpolate(round)}
-                </animated.td>
-            </tr>
-            <tr>
-                <th>X SD</th>
-                <td>
-                    <InlineMath>\sigma_x</InlineMath>
-                </td>
-                <animated.td>{sx.interpolate(round)}</animated.td>
-            </tr>
-            <tr>
-                <th>Y SD</th>
-                <td>
-                    <InlineMath>\sigma_y</InlineMath>
-                </td>
-                <animated.td>{sy.interpolate(round)}</animated.td>
-            </tr>
-            <tr>
-                <th>
-                    R<sup>2</sup>
-                </th>
-                <td>
-                    <InlineMath>R^2</InlineMath>
-                </td>
-                <animated.td>{r2.interpolate(round)}</animated.td>
-            </tr>
-        </tbody>
-    </table>
-);
-
 const Control = ({ points, stats }) => {
+    let ref = useRef(null);
+    let { width: w, height: h } = useComponentSize(ref);
+    const { my, sy } = stats;
+
+    const h2 = h / 2;
+
     return (
-        <div className="control-container">
-            <p className="title">
-                R<sup>2</sup> Visualizer
-            </p>
-            {/* <StatsTable stats={stats} /> */}
-            <Histogram points={points} />
+        <div className="control-container" ref={ref}>
+            {points.length >= 2 && (
+                <animated.div
+                    className="stdev-bar"
+                    style={{
+                        top: interpolate(
+                            [my, sy],
+                            (my, sy) => h2 + my - sy / 2
+                        ),
+                        bottom: interpolate(
+                            [my, sy],
+                            (my, sy) => h2 - my - sy / 2
+                        ),
+                    }}
+                >
+                    <span>STDEV</span>
+                </animated.div>
+            )}
+            <Histogram points={points} w={w} h={h} />
         </div>
     );
 };
@@ -251,6 +219,11 @@ const App = () => {
 
     return (
         <div className="all-wrapper">
+            <div className="section">
+                <p className="title">
+                    R<sup>2</sup> Visualizer
+                </p>
+            </div>
             <div className="box all-container">
                 <div className="tabs is-centered mb-0">
                     <ul>
