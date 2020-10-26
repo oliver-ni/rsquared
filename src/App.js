@@ -47,7 +47,7 @@ const Canvas = ({
     const { mx, my, b1, b0, r2 } = stats;
 
     const addPoint = (e) => {
-        if (e.target.constructor.name === "Circle") return;
+        if (e.target.attrs.fill === Colors.POINT) return;
         _addPoint(e.evt.layerX - w / 2, e.evt.layerY - h / 2);
     };
 
