@@ -32,7 +32,7 @@ const Canvas = ({
     points,
     addPoint: _addPoint,
     removePoint,
-    allowAdd,
+    allowEdit,
     stats,
     ...props
 }) => {
@@ -56,7 +56,7 @@ const Canvas = ({
             <Stage
                 width={w}
                 height={h}
-                onClick={allowAdd ? addPoint : undefined}
+                onClick={allowEdit ? addPoint : undefined}
             >
                 {points.length === 0 ? (
                     <Layer>
@@ -67,7 +67,7 @@ const Canvas = ({
                             align="center"
                             verticalAlign="middle"
                             text={
-                                allowAdd
+                                allowEdit
                                     ? "Click to add points"
                                     : "No points to display."
                             }
@@ -133,7 +133,11 @@ const Canvas = ({
                                 radius={8}
                                 fill={Colors.POINT}
                                 key={idx}
-                                onClick={() => removePoint(idx)}
+                                onClick={
+                                    allowEdit
+                                        ? removePoint.bind(null, idx)
+                                        : undefined
+                                }
                             />
                         ))}
                     </Layer>
@@ -249,7 +253,7 @@ const App = () => {
                             points={points}
                             addPoint={addPoint}
                             removePoint={removePoint}
-                            allowAdd={!showResids}
+                            allowEdit={!showResids}
                             stats={stats}
                             style={style}
                         />
